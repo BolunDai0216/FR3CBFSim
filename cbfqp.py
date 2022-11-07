@@ -1,3 +1,5 @@
+from pdb import set_trace
+
 import numpy as np
 import proxsuite
 
@@ -11,26 +13,23 @@ class CBFQP:
         self.initialized = False
 
     def solve(self, params):
-        H, g, A, b, C, l, u = self.compute_params(params)
+        H, g, C, lb, ub = self.compute_params(params)
 
         if not self.initialized:
-            self.qp.init(H, g, A, b, C, l, u)
-            self.qp.settings.eps_abs = 1.0e-6
+            self.qp.init(H=H, g=g, C=C, l=lb, u=ub)
+            self.qp.settings.eps_abs = 1.0e-8
             self.initialized = True
         else:
-            self.qp.update(H, g, A, b, C, l, u)
+            self.qp.update(H=H, g=g, C=C, l=lb, u=ub)
 
         self.qp.solve()
 
     def compute_params(self, params):
-        H = np.eye(self.n)
-        g = -2 * params["u_ref"]
-
-        A = np.zeros((self.n_eq, self.n))
-        b = np.zeros((self.n_eq,))
+        H = 2 * np.eye(self.n)
+        g = -2 * params["u_ref"][:, 0]
 
         C = params["∂h/∂x"] @ params["g(x)"]
         lb = -params["α"] * params["h"] - params["∂h/∂x"] @ params["f(x)"]
-        ub = np.inf
+        ub = np.array([[np.inf]])
 
-        return H, g, A, b, C, lb, ub
+        return H, g, C, lb, ub

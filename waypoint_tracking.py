@@ -1,8 +1,13 @@
+from pdb import set_trace
+
 import numpy as np
 import pinocchio as pin
 from FR3Env.controller.waypoint_controller_hierarchical_proxqp import WaypointController
 from FR3Env.fr3_env import FR3Sim
 from scipy.spatial.transform import Rotation as R
+
+from cbfqp import CBFQP
+from cbfs import box_cbf_ee
 
 
 def main():
@@ -17,7 +22,10 @@ def main():
     p_end_id = 0
 
     env = FR3Sim(render_mode="human", record_path=recordPath)
+
     controller = WaypointController()
+    cbfqp_solver = CBFQP(9)
+
     info = env.reset()
 
     p_end = p_ends[p_end_id]
@@ -105,12 +113,28 @@ def main():
         Kp = 10 * np.eye(9)
         τ = Kp @ Δq - 1.0 * dq[:, np.newaxis] + G
 
+        # CBFQP Filter
+        cbf, dcbf_dq = box_cbf_ee(q, dq, info)
+
+        cbfqp_params = {
+            "u_ref": τ,
+            "h": cbf,
+            "∂h/∂x": dcbf_dq,
+            "α": 5.0,
+            "f(x)": info["f(x)"],
+            "g(x)": info["g(x)"],
+        }
+
+        cbfqp_solver.solve(cbfqp_params)
+        _τ_cbf = cbfqp_solver.qp.results.x
+
         # Set control for the two fingers to zero
-        τ[-1] = 1.0 * (0.01 - q[-1]) + 0.1 * (0 - dq[-1])
-        τ[-2] = 1.0 * (0.01 - q[-2]) + 0.1 * (0 - dq[-2])
+        _τ_cbf[-1] = 1.0 * (0.01 - q[-1]) + 0.1 * (0 - dq[-1])
+        _τ_cbf[-2] = 1.0 * (0.01 - q[-2]) + 0.1 * (0 - dq[-2])
+        τ_cbf = _τ_cbf[:, np.newaxis]
 
         # Send joint commands to motor
-        info = env.step(τ)
+        info = env.step(τ_cbf)
         q, dq = info["q"], info["dq"]
 
     env.close()
