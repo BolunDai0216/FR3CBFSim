@@ -1,4 +1,5 @@
 import pickle
+from pdb import set_trace
 
 import numpy as np
 import pinocchio as pin
@@ -6,7 +7,7 @@ from FR3Env.controller.waypoint_controller_hierarchical_proxqp import WaypointCo
 from FR3Env.fr3_env import FR3Sim
 from scipy.spatial.transform import Rotation as R
 
-from FR3CBFSim.cbfqp import CBFQP 
+from FR3CBFSim.cbfqp import CBFQP
 from FR3CBFSim.cbfs import box_cbf_ee
 
 
@@ -54,8 +55,6 @@ def main():
     history = []
 
     for i in range(iterationNum):
-        history.append(info)
-
         # Get end-effector position
         p_current = info["P_EE"][:, np.newaxis]
 
@@ -117,16 +116,21 @@ def main():
         # Compute controller
         Δq = (q_target - q)[:, np.newaxis]
         Kp = 10 * np.eye(9)
-        τ = Kp @ Δq - 2.0 * dq[:, np.newaxis] + G
+        τ = Kp @ Δq - 1.0 * dq[:, np.newaxis] + G
 
         # CBFQP Filter
-        cbf, dcbf_dq = box_cbf_ee(q, dq, info)
+        cbf, dcbf_dq = box_cbf_ee(
+            q, dq, info, d_max=0.2, alpha=10.0, n_vec=np.array([[0.0], [1.0], [0.0]])
+        )
+
+        if cbf < 0.0:
+            set_trace()
 
         cbfqp_params = {
             "u_ref": τ,
             "h": cbf,
             "∂h/∂x": dcbf_dq,
-            "α": 5.0,
+            "α": 1.0,
             "f(x)": info["f(x)"],
             "g(x)": info["g(x)"],
         }
@@ -143,10 +147,12 @@ def main():
         info = env.step(τ_cbf)
 
         q, dq = info["q"], info["dq"]
+        info["cbf"] = cbf
+        history.append(info)
 
     env.close()
 
-    with open("data/z_limit.pickle", "wb") as handle:
+    with open("data/y_limit.pickle", "wb") as handle:
         pickle.dump(history, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 

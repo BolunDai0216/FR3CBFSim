@@ -13,16 +13,21 @@ class CBFQP:
         self.initialized = False
 
     def solve(self, params):
-        H, g, C, lb, ub = self.compute_params(params)
+        self.H, self.g, self.C, self.lb, self.ub = self.compute_params(params)
 
         if not self.initialized:
-            self.qp.init(H=H, g=g, C=C, l=lb, u=ub)
-            self.qp.settings.eps_abs = 1.0e-8
+            self.qp.init(H=self.H, g=self.g, C=self.C, l=self.lb, u=self.ub)
+            self.qp.settings.eps_abs = 1.0e-6
             self.initialized = True
         else:
-            self.qp.update(H=H, g=g, C=C, l=lb, u=ub)
+            self.qp.update(H=self.H, g=self.g, C=self.C, l=self.lb, u=self.ub)
 
         self.qp.solve()
+
+        # bool for cbf constraint satisfaction
+        self.cbf_constraint_satisfied = (
+            self.lb <= self.C @ self.qp.results.x[:, np.newaxis]
+        )[0, 0]
 
     def compute_params(self, params):
         H = 2 * np.eye(self.n)
