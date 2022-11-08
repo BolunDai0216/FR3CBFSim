@@ -33,6 +33,21 @@ class CBFQP:
         H = 2 * np.eye(self.n)
         g = -2 * params["u_ref"][:, 0]
 
+        # dt = 1 / 1000
+        # epsilon = 0.0
+
+        # C = np.vstack(
+        #     (params["∂h/∂x"] @ params["g(x)"], params["∂h/∂x"] @ params["g(x)"] * dt)
+        # )
+
+        # lb = np.vstack(
+        #     (
+        #         -params["α"] * params["h"] - params["∂h/∂x"] @ params["f(x)"],
+        #         epsilon - params["h"] - params["∂h/∂x"] @ params["f(x)"] * dt,
+        #     )
+        # )
+        # ub = np.array([[np.inf], [np.inf]])
+
         C = params["∂h/∂x"] @ params["g(x)"]
         lb = -params["α"] * params["h"] - params["∂h/∂x"] @ params["f(x)"]
         ub = np.array([[np.inf]])

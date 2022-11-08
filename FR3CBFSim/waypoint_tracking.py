@@ -120,11 +120,11 @@ def main():
 
         # CBFQP Filter
         cbf, dcbf_dq = box_cbf_ee(
-            q, dq, info, d_max=0.2, alpha=10.0, n_vec=np.array([[0.0], [1.0], [0.0]])
+            q, dq, info, d_max=-0.3, alpha=10.0, n_vec=np.array([[0.0], [0.0], [-1.0]])
         )
 
-        if cbf < 0.0:
-            set_trace()
+        # if cbf < 0.0:
+        #     set_trace()
 
         cbfqp_params = {
             "u_ref": τ,
@@ -138,6 +138,8 @@ def main():
         cbfqp_solver.solve(cbfqp_params)
         _τ_cbf = cbfqp_solver.qp.results.x
 
+        dh = dcbf_dq @ (info["f(x)"] + info["g(x)"] @ _τ_cbf[:, np.newaxis])
+
         # Set control for the two fingers to zero
         _τ_cbf[-1] = 1.0 * (0.01 - q[-1]) + 0.1 * (0 - dq[-1])
         _τ_cbf[-2] = 1.0 * (0.01 - q[-2]) + 0.1 * (0 - dq[-2])
@@ -148,11 +150,13 @@ def main():
 
         q, dq = info["q"], info["dq"]
         info["cbf"] = cbf
+        info["dcbf"] = dh
+        info["τ_cbf"] = τ_cbf
         history.append(info)
 
     env.close()
 
-    with open("data/y_limit.pickle", "wb") as handle:
+    with open("data/z_limit.pickle", "wb") as handle:
         pickle.dump(history, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
