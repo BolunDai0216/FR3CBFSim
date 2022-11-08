@@ -6,8 +6,8 @@ from FR3Env.controller.waypoint_controller_hierarchical_proxqp import WaypointCo
 from FR3Env.fr3_env import FR3Sim
 from scipy.spatial.transform import Rotation as R
 
-from cbfqp import CBFQP
-from cbfs import box_cbf_ee
+from FR3CBFSim.cbfqp import CBFQP
+from FR3CBFSim.cbfs import box_cbf_ee
 
 
 def main():
@@ -34,6 +34,8 @@ def main():
     # get initial rotation and position
     q, dq, R_start, _p_start = info["q"], info["dq"], info["R_EE"], info["P_EE"]
     p_start = _p_start[:, np.newaxis]
+
+    __R_start = info["R_EE"]
 
     # Get target orientation based on initial orientation
     _R_end = (
@@ -86,8 +88,7 @@ def main():
             q_max,
             q_nominal,
         )
-
-        if controller.status == controller.WAIT:
+        if i % (240 * 30) == 0 and i > 1:
             p_end = p_ends[p_end_id]
             p_end_id = (p_end_id + 1) % len(p_ends)
 
@@ -99,7 +100,7 @@ def main():
             _R_end = (
                 R.from_euler("x", 0, degrees=True).as_matrix()
                 @ R.from_euler("z", 0, degrees=True).as_matrix()
-                @ R_start
+                @ __R_start
             )
             R_end = R.from_matrix(_R_end).as_matrix()
 
@@ -111,7 +112,7 @@ def main():
         # Compute controller
         Δq = (q_target - q)[:, np.newaxis]
         Kp = 10 * np.eye(9)
-        τ = Kp @ Δq - 1.0 * dq[:, np.newaxis] + G
+        τ = Kp @ Δq - 2.0 * dq[:, np.newaxis] + G
 
         # CBFQP Filter
         cbf, dcbf_dq = box_cbf_ee(q, dq, info)
@@ -135,6 +136,7 @@ def main():
 
         # Send joint commands to motor
         info = env.step(τ_cbf)
+
         q, dq = info["q"], info["dq"]
 
     env.close()

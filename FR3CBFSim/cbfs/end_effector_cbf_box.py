@@ -2,7 +2,7 @@ import numpy as np
 
 
 def end_effector_cbf_box(
-    q, dq, info, d_max=-0.25, alpha=10.0, n_vec=np.array([[0.0], [0.0], [-1.0]])
+    q, dq, info, d_max=-0.3, alpha=10.0, n_vec=np.array([[0.0], [0.0], [-1.0]])
 ):
     """
     cbf.shape = (1, 1), dcbf_dq.shape = (1, nx)
