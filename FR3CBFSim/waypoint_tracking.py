@@ -1,4 +1,4 @@
-from pdb import set_trace
+import pickle
 
 import numpy as np
 import pinocchio as pin
@@ -6,7 +6,7 @@ from FR3Env.controller.waypoint_controller_hierarchical_proxqp import WaypointCo
 from FR3Env.fr3_env import FR3Sim
 from scipy.spatial.transform import Rotation as R
 
-from FR3CBFSim.cbfqp import CBFQP
+from FR3CBFSim.cbfqp import CBFQP 
 from FR3CBFSim.cbfs import box_cbf_ee
 
 
@@ -50,7 +50,12 @@ def main():
     q_max = env.observation_space.high[:9][:, np.newaxis]
     q_nominal = env.q_nominal[:, np.newaxis]
 
+    # Data storage
+    history = []
+
     for i in range(iterationNum):
+        history.append(info)
+
         # Get end-effector position
         p_current = info["P_EE"][:, np.newaxis]
 
@@ -140,6 +145,9 @@ def main():
         q, dq = info["q"], info["dq"]
 
     env.close()
+
+    with open("data/z_limit.pickle", "wb") as handle:
+        pickle.dump(history, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":
