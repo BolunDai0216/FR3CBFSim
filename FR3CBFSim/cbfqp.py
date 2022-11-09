@@ -49,7 +49,7 @@ class CBFQP:
         # ub = np.array([[np.inf], [np.inf]])
 
         C = params["∂h/∂x"] @ params["g(x)"]
-        lb = -params["α"] * params["h"] - params["∂h/∂x"] @ params["f(x)"]
+        lb = 5e-2 - params["α"] * params["h"] - params["∂h/∂x"] @ params["f(x)"]
         ub = np.array([[np.inf]])
 
         return H, g, C, lb, ub

@@ -14,4 +14,4 @@ def end_effector_cbf_box(
     cbf = -n_vec.T @ J @ dq + alpha * (d_max - n_vec.T @ ee_pos)
     dcbf_dq = np.hstack((-n_vec.T @ (dJ + alpha * J), -n_vec.T @ J))
 
-    return cbf, dcbf_dq
+    return 0.1 * cbf, 0.1 * dcbf_dq

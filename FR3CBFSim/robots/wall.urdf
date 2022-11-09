@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<robot name="wall">
+<link name="world"/>
+
+<link name="wall_link">
+    <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0.0"/>
+        <mass value="0"/>
+        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+    <visual>
+        <origin rpy="0 0 0" xyz="0 -0.6 0"/>
+        <geometry>
+            <box size="5 0.1 0.5"/>
+        </geometry>
+        <material name="brick">
+            <color rgba="0.58 0.23 0.19 1."/>
+        </material>
+    </visual>
+
+    <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+            <box size="5.0 0.7 10.0"/>
+        </geometry>
+    </collision>
+</link>
+
+<joint name="joint1" type="fixed">
+    <origin rpy="0 0 0" xyz="0 1.0 0.5"/>
+    <parent link="world"/>
+    <child link="wall_link"/>
+</joint>
+
+</robot>
