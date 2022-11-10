@@ -1,5 +1,15 @@
 import numpy as np
+import numpy.linalg as LA
 from scipy.spatial.transform import Rotation as R
+
+
+def axis_angle_from_rot_mat(rot_mat):
+    rotation = R.from_matrix(rot_mat)
+    axis_angle = rotation.as_rotvec()
+    angle = LA.norm(axis_angle)
+    axis = axis_angle / angle
+
+    return axis, angle
 
 
 def alpha_func(t, T=5.0):
@@ -9,9 +19,9 @@ def alpha_func(t, T=5.0):
         c = np.cos(np.pi * t / T)
 
         α = np.sin(β)
-        dα = ((np.pi ** 2) / (4 * T)) * np.cos(β) * s
-        ddα = ((np.pi ** 3) / (4 * T ** 2)) * c * np.cos(β) - (
-            ((np.pi ** 4) / (16 * T ** 2)) * (s ** 2) * np.sin(β)
+        dα = ((np.pi**2) / (4 * T)) * np.cos(β) * s
+        ddα = ((np.pi**3) / (4 * T**2)) * c * np.cos(β) - (
+            ((np.pi**4) / (16 * T**2)) * (s**2) * np.sin(β)
         )
     else:
         α = 1.0

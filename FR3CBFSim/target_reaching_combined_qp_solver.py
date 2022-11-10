@@ -3,12 +3,11 @@ import pickle
 import numpy as np
 import numpy.linalg as LA
 from FR3Env.fr3_env import FR3Sim
-from FR3Env.hello_world import axis_angle_from_rot_mat
 from scipy.spatial.transform import Rotation as R
 
 from FR3CBFSim.cbfs import box_cbf_ee
 from FR3CBFSim.controllers.combined_qp_solver import CombinedQPSolver
-from FR3CBFSim.controllers.utils import smooth_trig_path_gen
+from FR3CBFSim.controllers.utils import axis_angle_from_rot_mat, smooth_trig_path_gen
 
 
 def main():
@@ -82,7 +81,7 @@ def main():
 
         # Compute CBF
         cbf, dcbf_dq = box_cbf_ee(
-            q, dq, info, d_max=-0.3, alpha=10.0, n_vec=np.array([[0.0], [0.0], [-1.0]])
+            info, d_max=-0.3, alpha=10.0, n_vec=np.array([[0.0], [0.0], [-1.0]])
         )
 
         # Solve for τ
