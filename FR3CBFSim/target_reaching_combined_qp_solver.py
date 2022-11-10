@@ -112,6 +112,10 @@ def main():
         qp_solver.solve(params)
         τ = qp_solver.qp.results.x[9:]
 
+        # Control for the fingers
+        τ[-1] = 1.0 * (0.01 - q[-1]) + 0.1 * (0 - dq[-1])
+        τ[-2] = 1.0 * (0.01 - q[-2]) + 0.1 * (0 - dq[-2])
+
         # Send joint commands to motor
         info = env.step(τ)
         q, dq = info["q"], info["dq"]

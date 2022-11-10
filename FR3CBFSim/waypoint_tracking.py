@@ -1,17 +1,15 @@
 import pickle
-from pdb import set_trace
 
 import numpy as np
 import pinocchio as pin
+import pybullet as p
 from FR3Env.controller.waypoint_controller_hierarchical_proxqp import WaypointController
 from FR3Env.fr3_env import FR3Sim
 from scipy.spatial.transform import Rotation as R
 
-from FR3CBFSim.controllers.cbfqp import CBFQP
-from FR3CBFSim.cbfs import box_cbf_ee
 from FR3CBFSim import getDataPath
-
-import pybullet as p
+from FR3CBFSim.cbfs import box_cbf_ee
+from FR3CBFSim.controllers.cbfqp import CBFQP
 
 
 def main():
@@ -29,7 +27,7 @@ def main():
 
     # Load wall
     wall_urdf_path = getDataPath() + "/robots/wall.urdf"
-    wallID = p.loadURDF(wall_urdf_path, useFixedBase=True)
+    p.loadURDF(wall_urdf_path, useFixedBase=True)
 
     controller = WaypointController()
     cbfqp_solver = CBFQP(9)
