@@ -131,3 +131,6 @@ dmypy.json
 # data
 data
 .pickle
+
+# MacOS
+.DS_Store
