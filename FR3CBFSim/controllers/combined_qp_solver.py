@@ -1,5 +1,3 @@
-from pdb import set_trace
-
 import numpy as np
 import proxsuite
 
@@ -8,7 +6,7 @@ class CombinedQPSolver:
     def __init__(self, n):
         self.n = n
         self.n_eq = int(n / 2)
-        self.n_ieq = 0
+        self.n_ieq = 1
         self.qp = proxsuite.proxqp.dense.QP(self.n, self.n_eq, self.n_ieq)
         self.initialized = False
 
@@ -18,11 +16,15 @@ class CombinedQPSolver:
         )
 
         if not self.initialized:
-            self.qp.init(H=self.H, g=self.g, A=self.A, b=self.b)
+            self.qp.init(
+                H=self.H, g=self.g, A=self.A, b=self.b, C=self.C, l=self.lb, u=self.ub
+            )
             self.qp.settings.eps_abs = 1.0e-6
             self.initialized = True
         else:
-            self.qp.update(H=self.H, g=self.g, A=self.A, b=self.b)
+            self.qp.update(
+                H=self.H, g=self.g, A=self.A, b=self.b, C=self.C, l=self.lb, u=self.ub
+            )
 
         self.qp.solve()
 
@@ -54,6 +56,8 @@ class CombinedQPSolver:
         A = np.hstack((params["M(q)"], -np.eye(9)))
         b = -params["nle"]
 
-        C, lb, ub = 0, 0, 0
+        C = np.hstack((np.zeros((1, 9)), params["∂h/∂x"] @ params["g(x)"]))
+        lb = -params["α"] * params["h"] - params["∂h/∂x"] @ params["f(x)"]
+        ub = np.array([[np.inf]])
 
         return H, g, A, b, C, lb, ub

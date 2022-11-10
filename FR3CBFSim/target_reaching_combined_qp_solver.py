@@ -1,11 +1,13 @@
+import pickle
+
 import numpy as np
 import numpy.linalg as LA
-
-# from FR3CBFSim.controllers.combined_qp_solver import CombinedQPSolver
-from controllers.combined_qp_solver import CombinedQPSolver
 from FR3Env.fr3_env import FR3Sim
 from FR3Env.hello_world import axis_angle_from_rot_mat
 from scipy.spatial.transform import Rotation as R
+
+from FR3CBFSim.cbfs import box_cbf_ee
+from FR3CBFSim.controllers.combined_qp_solver import CombinedQPSolver
 
 
 def alpha_func(t, T=5.0):
@@ -33,7 +35,7 @@ def main():
 
     info = env.reset()
 
-    p_end = np.array([[0.3], [-0.4], [0.2]])
+    p_end = np.array([[0.3], [0.4], [0.2]])
 
     # get initial rotation and position
     q, dq, R_start, _p_start = info["q"], info["dq"], info["R_EE"], info["P_EE"]
@@ -42,14 +44,17 @@ def main():
     # Get target orientation based on initial orientation
     _R_end = (
         R.from_euler("x", 0, degrees=True).as_matrix()
-        @ R.from_euler("z", -90, degrees=True).as_matrix()
+        @ R.from_euler("z", 0, degrees=True).as_matrix()
         @ R_start
     )
     R_end = R.from_matrix(_R_end).as_matrix()
     R_error = R_end @ R_start.T
     axis_error, angle_error = axis_angle_from_rot_mat(R_error)
 
-    for i in range(20000):
+    # Data storage
+    history = []
+
+    for i in range(7500):
         # Get simulation time
         sim_time = i * (1 / 240)
 
@@ -108,7 +113,12 @@ def main():
             - 0.2 * dq[:, np.newaxis]
         )
 
-        # Solve for q_target
+        # Compute CBF
+        cbf, dcbf_dq = box_cbf_ee(
+            q, dq, info, d_max=-0.3, alpha=10.0, n_vec=np.array([[0.0], [0.0], [-1.0]])
+        )
+
+        # Solve for τ
         params = {
             "Jacobian": jacobian,
             "dJ": info["dJ_EE"],
@@ -125,13 +135,18 @@ def main():
             "ddq_nominal": ddq_nominal,
             "Kp": 2.0 * np.eye(6),
             "Kd": 0.2 * np.eye(6),
+            "h": cbf,
+            "∂h/∂x": dcbf_dq,
+            "α": 1.0,
+            "f(x)": info["f(x)"],
+            "g(x)": info["g(x)"],
         }
 
         qp_solver.solve(params)
-        τ_solved = qp_solver.qp.results.x[9:]
+        τ = qp_solver.qp.results.x[9:]
 
         # Send joint commands to motor
-        info = env.step(τ_solved)
+        info = env.step(τ)
         q, dq = info["q"], info["dq"]
 
         # compute _rotvec_err
@@ -145,7 +160,14 @@ def main():
                 ),
             )
 
+        info["cbf"] = cbf
+        info["τ"] = τ
+        history.append(info)
+
     env.close()
+
+    with open("data/_z_limit.pickle", "wb") as handle:
+        pickle.dump(history, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":
