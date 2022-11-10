@@ -8,25 +8,7 @@ from scipy.spatial.transform import Rotation as R
 
 from FR3CBFSim.cbfs import box_cbf_ee
 from FR3CBFSim.controllers.combined_qp_solver import CombinedQPSolver
-
-
-def alpha_func(t, T=5.0):
-    if t <= T:
-        β = (np.pi / 4) * (1 - np.cos(np.pi * t / T))
-        s = np.sin(np.pi * t / T)
-        c = np.cos(np.pi * t / T)
-
-        α = np.sin(β)
-        dα = ((np.pi ** 2) / (4 * T)) * np.cos(β) * s
-        ddα = ((np.pi ** 3) / (4 * T ** 2)) * c * np.cos(β) - (
-            ((np.pi ** 4) / (16 * T ** 2)) * (s ** 2) * np.sin(β)
-        )
-    else:
-        α = 1.0
-        dα = 0.0
-        ddα = 0.0
-
-    return α, dα, ddα
+from FR3CBFSim.controllers.utils import smooth_trig_path_gen
 
 
 def main():
@@ -58,56 +40,41 @@ def main():
         # Get simulation time
         sim_time = i * (1 / 240)
 
-        # Compute α and dα
-        alpha, dalpha, ddalpha = alpha_func(sim_time, T=30.0)
-
-        # Compute p_target
-        p_target = p_start + alpha * (p_end - p_start)
-
-        # Compute v_target
-        v_target = dalpha * (p_end - p_start)
-
-        # Compute a_target
-        a_target = ddalpha * (p_end - p_start)
-
-        # Compute R_target
-        theta_t = alpha * angle_error
-        R_target = R.from_rotvec(axis_error * theta_t).as_matrix() @ R_start
-
-        # Compute ω_target
-        ω_target = dalpha * axis_error * angle_error
-
-        # Compute dω_target
-        dω_target = ddalpha * axis_error * angle_error
+        # Generate path targets for current time step
+        path_targets = smooth_trig_path_gen(
+            sim_time, p_start, p_end, R_start, axis_error, angle_error, T=30.0
+        )
 
         # Get end-effector position
-        p_current = info["P_EE"][:, np.newaxis]
-
-        # Get end-effector orientation
-        R_current = info["R_EE"]
+        p_current, R_current = info["P_EE"][:, np.newaxis], info["R_EE"]
 
         # Error rotation matrix
-        R_err = R_target @ R_current.T
+        R_err = path_targets["R_target"] @ R_current.T
 
         # Orientation error in axis-angle form
         rotvec_err = R.from_matrix(R_err).as_rotvec()
 
-        # Get Jacobian from grasp target frame
-        jacobian = info["J_EE"]
+        # Get Jacobian from EE frame
+        jacobian, pinv_jac = info["J_EE"], info["pJ_EE"]
 
-        # Get pseudo-inverse of frame Jacobian
-        pinv_jac = info["pJ_EE"]
-
-        # Compute controller
+        # Compute EE position error
         p_error = np.zeros((6, 1))
-        p_error[:3] = p_target - p_current
+        p_error[:3] = path_targets["p_target"] - p_current
         p_error[3:] = rotvec_err[:, np.newaxis]
 
-        dp_target = np.vstack((v_target, ω_target[:, np.newaxis]))
+        # Compute EE velocity error
+        dp_target = np.vstack(
+            (path_targets["v_target"], path_targets["ω_target"][:, np.newaxis])
+        )
         dp_measured = jacobian @ dq[:, np.newaxis]
         dp_error = dp_target - dp_measured
 
-        ddp_target = np.vstack((a_target, dω_target[:, np.newaxis]))
+        # Compute target EE acceleration
+        ddp_target = np.vstack(
+            (path_targets["a_target"], path_targets["dω_target"][:, np.newaxis])
+        )
+
+        # Compute joint-centering joint acceleration
         ddq_nominal = (
             0.5 * (env.q_nominal[:, np.newaxis] - q[:, np.newaxis])
             - 0.2 * dq[:, np.newaxis]
@@ -149,10 +116,11 @@ def main():
         info = env.step(τ)
         q, dq = info["q"], info["dq"]
 
-        # compute _rotvec_err
+        # compute instantaneous rotvec_err
         _R_err = R_end @ R_current.T
         _rotvec_err = R.from_matrix(_R_err).as_rotvec()
 
+        # Print to console
         if i % 500 == 0:
             print(
                 "Iter {:.2e} \t ǁeₒǁ₂: {:.2e} \t ǁeₚǁ₂: {:.2e}".format(
@@ -160,6 +128,7 @@ def main():
                 ),
             )
 
+        # Store data for plotting
         info["cbf"] = cbf
         info["τ"] = τ
         history.append(info)
