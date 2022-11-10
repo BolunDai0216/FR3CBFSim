@@ -7,7 +7,7 @@ from FR3Env.controller.waypoint_controller_hierarchical_proxqp import WaypointCo
 from FR3Env.fr3_env import FR3Sim
 from scipy.spatial.transform import Rotation as R
 
-from FR3CBFSim.cbfqp import CBFQP
+from FR3CBFSim.controllers.cbfqp import CBFQP
 from FR3CBFSim.cbfs import box_cbf_ee
 from FR3CBFSim import getDataPath
 
