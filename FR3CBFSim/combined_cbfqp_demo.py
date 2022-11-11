@@ -27,11 +27,7 @@ def main():
         default=100000,
     )
     parser.add_argument(
-        "-d",
-        "--dataPath",
-        help="path where the data is saved",
-        type=str,
-        default=None,
+        "-d", "--dataPath", help="path where the data is saved", type=str, default=None,
     )
     args = parser.parse_args()
 
