@@ -7,7 +7,11 @@ from scipy.spatial.transform import Rotation as R
 
 from FR3CBFSim.cbfs import box_cbf_ee
 from FR3CBFSim.controllers.combined_qp_solver import CombinedQPSolver
-from FR3CBFSim.controllers.utils import axis_angle_from_rot_mat, smooth_trig_path_gen
+from FR3CBFSim.controllers.utils import (
+    axis_angle_from_rot_mat,
+    get_R_end_from_start,
+    smooth_trig_path_gen,
+)
 
 
 def main():
@@ -21,14 +25,7 @@ def main():
     # get initial rotation and position
     q, dq, R_start, _p_start = info["q"], info["dq"], info["R_EE"], info["P_EE"]
     p_start = _p_start[:, np.newaxis]
-
-    # Get target orientation based on initial orientation
-    _R_end = (
-        R.from_euler("x", 0, degrees=True).as_matrix()
-        @ R.from_euler("z", 0, degrees=True).as_matrix()
-        @ R_start
-    )
-    R_end = R.from_matrix(_R_end).as_matrix()
+    R_end = get_R_end_from_start(0, 0, 0, R_start)
     R_error = R_end @ R_start.T
     axis_error, angle_error = axis_angle_from_rot_mat(R_error)
 

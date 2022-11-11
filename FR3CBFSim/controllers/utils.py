@@ -64,3 +64,16 @@ def smooth_trig_path_gen(t, p_start, p_end, R_start, axis_error, angle_error, T=
     }
 
     return path_targets
+
+
+def get_R_end_from_start(x_ang, y_ang, z_ang, R_start):
+    """Get target orientation based on initial orientation"""
+    _R_end = (
+        R.from_euler("x", x_ang, degrees=True).as_matrix()
+        @ R.from_euler("y", y_ang, degrees=True).as_matrix()
+        @ R.from_euler("z", z_ang, degrees=True).as_matrix()
+        @ R_start
+    )
+    R_end = R.from_matrix(_R_end).as_matrix()
+
+    return R_end

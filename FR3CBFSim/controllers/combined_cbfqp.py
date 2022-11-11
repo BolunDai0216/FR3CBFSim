@@ -142,4 +142,7 @@ class CombinedCBFQP:
         τ[-1] = 1.0 * (0.01 - q[-1]) + 0.1 * (0 - dq[-1])
         τ[-2] = 1.0 * (0.01 - q[-2]) + 0.1 * (0 - dq[-2])
 
-        return τ, error
+        # sol_info for logging
+        sol_info = {"error": error, "cbf": cbf}
+
+        return τ, sol_info

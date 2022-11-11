@@ -1,10 +1,11 @@
 import argparse
+import pickle
 
 import numpy as np
 from FR3Env.fr3_env import FR3Sim
-from scipy.spatial.transform import Rotation as R
 
 from FR3CBFSim.controllers.combined_cbfqp import CombinedCBFQP
+from FR3CBFSim.controllers.utils import get_R_end_from_start
 
 
 def main():
@@ -22,6 +23,13 @@ def main():
         help="number of iterations of the simulation",
         type=int,
         default=100000,
+    )
+    parser.add_argument(
+        "-d",
+        "--dataPath",
+        help="path where the data is saved",
+        type=str,
+        default=None,
     )
     args = parser.parse_args()
 
@@ -43,16 +51,13 @@ def main():
     R_start, _p_start = info["R_EE"], info["P_EE"]
     p_start = _p_start[:, np.newaxis]
 
-    # Get target orientation based on initial orientation
-    _R_end = (
-        R.from_euler("x", 0, degrees=True).as_matrix()
-        @ R.from_euler("z", 0, degrees=True).as_matrix()
-        @ R_start
-    )
-    R_end = R.from_matrix(_R_end).as_matrix()
+    R_end = get_R_end_from_start(0, 0, 0, R_start)
 
     controller.start(p_start, p_end, R_start, R_end, 30.0)
     q_nominal = env.q_nominal[:, np.newaxis]
+
+    # Data storage
+    history = []
 
     for i in range(args.iterationNum):
         # Get end-effector position
@@ -65,7 +70,7 @@ def main():
         else:
             dt = 1 / 240
 
-        τ, error = controller.update(p_current, R_current, dt, q_nominal, info)
+        τ, sol_info = controller.update(p_current, R_current, dt, q_nominal, info)
 
         if i % 10000 == 0 and i > 1:
             p_end = p_ends[p_end_id]
@@ -74,24 +79,26 @@ def main():
             # get initial rotation and position
             R_start, _p_start = info["R_EE"], info["P_EE"]
             p_start = _p_start[:, np.newaxis]
-
-            # Get target orientation based on initial orientation
-            _R_end = (
-                R.from_euler("x", 0, degrees=True).as_matrix()
-                @ R.from_euler("z", 0, degrees=True).as_matrix()
-                @ R_start
-            )
-            R_end = R.from_matrix(_R_end).as_matrix()
+            R_end = get_R_end_from_start(0, 0, 0, R_start)
 
             controller.start(p_start, p_end, R_start, R_end, 30.0)
 
         if i % 500 == 0:
-            print("Iter {:.2e} \t error: {:.2e}".format(i, error))
+            print("Iter {:.2e} \t error: {:.2e}".format(i, sol_info["error"]))
 
         # Send joint commands to motor
         info = env.step(τ)
 
+        # Store data for plotting
+        info["cbf"] = sol_info["cbf"]
+        info["τ"] = τ
+        history.append(info)
+
     env.close()
+
+    if args.dataPath is not None:
+        with open(args.dataPath, "wb") as handle:
+            pickle.dump(history, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":

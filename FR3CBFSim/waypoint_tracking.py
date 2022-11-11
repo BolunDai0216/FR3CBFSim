@@ -5,11 +5,11 @@ import pinocchio as pin
 import pybullet as p
 from FR3Env.controller.waypoint_controller_hierarchical_proxqp import WaypointController
 from FR3Env.fr3_env import FR3Sim
-from scipy.spatial.transform import Rotation as R
 
 from FR3CBFSim import getDataPath
 from FR3CBFSim.cbfs import box_cbf_ee
 from FR3CBFSim.controllers.cbfqp import CBFQP
+from FR3CBFSim.controllers.utils import get_R_end_from_start
 
 
 def main():
@@ -40,16 +40,8 @@ def main():
     # get initial rotation and position
     q, dq, R_start, _p_start = info["q"], info["dq"], info["R_EE"], info["P_EE"]
     p_start = _p_start[:, np.newaxis]
-
     __R_start = info["R_EE"]
-
-    # Get target orientation based on initial orientation
-    _R_end = (
-        R.from_euler("x", 0, degrees=True).as_matrix()
-        @ R.from_euler("z", 0, degrees=True).as_matrix()
-        @ R_start
-    )
-    R_end = R.from_matrix(_R_end).as_matrix()
+    R_end = get_R_end_from_start(0, 0, 0, R_start)
 
     controller.start(p_start, p_end, R_start, R_end, 30.0)
     q_min = env.observation_space.low[:9][:, np.newaxis]
@@ -104,14 +96,7 @@ def main():
             # get initial rotation and position
             dq, R_start, _p_start = info["dq"], info["R_EE"], info["P_EE"]
             p_start = _p_start[:, np.newaxis]
-
-            # Get target orientation based on initial orientation
-            _R_end = (
-                R.from_euler("x", 0, degrees=True).as_matrix()
-                @ R.from_euler("z", 0, degrees=True).as_matrix()
-                @ __R_start
-            )
-            R_end = R.from_matrix(_R_end).as_matrix()
+            R_end = get_R_end_from_start(0, 0, 0, __R_start)
 
             controller.start(p_start, p_end, R_start, R_end, 30.0)
 
