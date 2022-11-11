@@ -3,7 +3,7 @@ import numpy.linalg as LA
 from scipy.spatial.transform import Rotation as R
 
 from FR3CBFSim.cbfs import box_cbf_ee
-from FR3CBFSim.controllers.combined_qp_solver import CombinedQPSolver
+from FR3CBFSim.controllers.combined_cbfqp_solver import CombinedCBFQPSolver
 from FR3CBFSim.controllers.utils import axis_angle_from_rot_mat, smooth_trig_path_gen
 
 
@@ -19,7 +19,7 @@ class CombinedCBFQP:
         self.R_end = None
         self.movement_duration = None
         self.clock = 0.0
-        self.qp_solver = CombinedQPSolver(2 * 9)  # 9 represents there are 9 joints
+        self.qp_solver = CombinedCBFQPSolver(2 * 9)  # 9 represents there are 9 joints
 
         self.status = None
 

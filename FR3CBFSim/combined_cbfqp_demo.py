@@ -2,8 +2,10 @@ import argparse
 import pickle
 
 import numpy as np
+import pybullet as p
 from FR3Env.fr3_env import FR3Sim
 
+from FR3CBFSim import getDataPath
 from FR3CBFSim.controllers.combined_cbfqp import CombinedCBFQP
 from FR3CBFSim.controllers.utils import get_R_end_from_start
 
@@ -42,6 +44,11 @@ def main():
 
     env = FR3Sim(render_mode="human", record_path=args.recordPath)
     controller = CombinedCBFQP()
+
+    # Load wall
+    wall_urdf_path = getDataPath() + "/robots/wall.urdf"
+    p.loadURDF(wall_urdf_path, useFixedBase=True)
+
     info = env.reset()
 
     p_end = p_ends[p_end_id]

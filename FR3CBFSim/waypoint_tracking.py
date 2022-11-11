@@ -110,7 +110,7 @@ def main():
 
         # CBFQP Filter
         cbf, dcbf_dq = box_cbf_ee(
-            q, dq, info, d_max=0.3, alpha=10.0, n_vec=np.array([[0.0], [1.0], [0.0]])
+            info, d_max=0.3, alpha=10.0, n_vec=np.array([[0.0], [1.0], [0.0]])
         )
 
         cbfqp_params = {

@@ -6,7 +6,7 @@ from FR3Env.fr3_env import FR3Sim
 from scipy.spatial.transform import Rotation as R
 
 from FR3CBFSim.cbfs import box_cbf_ee
-from FR3CBFSim.controllers.combined_qp_solver import CombinedQPSolver
+from FR3CBFSim.controllers.combined_cbfqp_solver import CombinedCBFQPSolver
 from FR3CBFSim.controllers.utils import (
     axis_angle_from_rot_mat,
     get_R_end_from_start,
@@ -16,7 +16,7 @@ from FR3CBFSim.controllers.utils import (
 
 def main():
     env = FR3Sim(render_mode="human")
-    qp_solver = CombinedQPSolver(2 * 9)  # 9 represents there are 9 joints
+    qp_solver = CombinedCBFQPSolver(2 * 9)  # 9 represents there are 9 joints
 
     info = env.reset()
 

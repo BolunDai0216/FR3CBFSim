@@ -2,7 +2,7 @@ import numpy as np
 import proxsuite
 
 
-class CombinedQPSolver:
+class CombinedCBFQPSolver:
     def __init__(self, n):
         self.n = n
         self.n_eq = int(n / 2)
