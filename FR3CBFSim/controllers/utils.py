@@ -19,9 +19,9 @@ def alpha_func(t, T=5.0):
         c = np.cos(np.pi * t / T)
 
         α = np.sin(β)
-        dα = ((np.pi ** 2) / (4 * T)) * np.cos(β) * s
-        ddα = ((np.pi ** 3) / (4 * T ** 2)) * c * np.cos(β) - (
-            ((np.pi ** 4) / (16 * T ** 2)) * (s ** 2) * np.sin(β)
+        dα = ((np.pi**2) / (4 * T)) * np.cos(β) * s
+        ddα = ((np.pi**3) / (4 * T**2)) * c * np.cos(β) - (
+            ((np.pi**4) / (16 * T**2)) * (s**2) * np.sin(β)
         )
     else:
         α = 1.0
@@ -53,6 +53,40 @@ def smooth_trig_path_gen(t, p_start, p_end, R_start, axis_error, angle_error, T=
 
     # Compute dω (angular acceleration) target
     dω_target = ddalpha * axis_error * angle_error
+
+    path_targets = {
+        "p_target": p_target,
+        "v_target": v_target,
+        "a_target": a_target,
+        "R_target": R_target,
+        "ω_target": ω_target,
+        "dω_target": dω_target,
+    }
+
+    return path_targets
+
+
+def sinusoid_path_gen(t, p_start, R_start, T=10.0, A=0.2):
+    # Compute postion target
+    p_target = p_start
+    p_target[1] = np.sin(np.pi * t / T) * A
+
+    # Compute velocity target
+    v_target = np.zeros((3, 1))
+    v_target[1] = (np.pi / T) * np.cos(np.pi * t / T) * A
+
+    # Compute accleration target
+    a_target = np.zeros((3, 1))
+    a_target[1] = -(np.pi**2 / T**2) * np.sin(np.pi * t / T) * A
+
+    # Compute Rotation target
+    R_target = np.eye(3) * R_start
+
+    # Compute ω (angular velocity) target
+    ω_target = np.zeros((3,))
+
+    # Compute dω (angular acceleration) target
+    dω_target = np.zeros((3,))
 
     path_targets = {
         "p_target": p_target,
