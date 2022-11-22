@@ -34,8 +34,11 @@ def main():
     )
     args = parser.parse_args()
 
+    dt = 1 / 1000
+
     # create environment
     env = FR3Sim(render_mode="human", record_path=args.recordPath)
+    p.setTimeStep(dt)
 
     # create controller
     controller = InverseDynamicsController()
@@ -60,11 +63,11 @@ def main():
         R_current = info["R_EE"]
 
         if i == 0:
-            dt = 0
+            _dt = 0
         else:
-            dt = 1 / 240
+            _dt = dt
 
-        τ, sol_info = controller.update(p_current, R_current, dt, info)
+        τ, sol_info = controller.update(p_current, R_current, _dt, info)
 
         if i % 500 == 0:
             print("Iter {:.2e} \t error: {:.2e}".format(i, sol_info["error"]))

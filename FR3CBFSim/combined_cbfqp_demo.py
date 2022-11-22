@@ -27,7 +27,11 @@ def main():
         default=100000,
     )
     parser.add_argument(
-        "-d", "--dataPath", help="path where the data is saved", type=str, default=None,
+        "-d",
+        "--dataPath",
+        help="path where the data is saved",
+        type=str,
+        default=None,
     )
     args = parser.parse_args()
 
@@ -38,7 +42,10 @@ def main():
     ]
     p_end_id = 0
 
+    dt = 1 / 240
+
     env = FR3Sim(render_mode="human", record_path=args.recordPath)
+    p.setTimeStep(dt)
     controller = CombinedCBFQP()
 
     # Load wall
@@ -69,11 +76,11 @@ def main():
         R_current = info["R_EE"]
 
         if i == 0:
-            dt = 0
+            _dt = 0
         else:
-            dt = 1 / 240
+            _dt = dt
 
-        τ, sol_info = controller.update(p_current, R_current, dt, q_nominal, info)
+        τ, sol_info = controller.update(p_current, R_current, _dt, q_nominal, info)
 
         if i % 10000 == 0 and i > 1:
             p_end = p_ends[p_end_id]
