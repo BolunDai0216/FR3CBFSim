@@ -134,3 +134,6 @@ data
 
 # MacOS
 .DS_Store
+
+# Videos
+*.mp4
