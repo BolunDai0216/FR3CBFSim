@@ -42,13 +42,14 @@ class KinematicsControllerSolver:
 
         if params["cbf_type"] == "x":
             C = -params["Jacobian"][:1, :]
-            x_wall = 0.6
-            lb = np.array([[-10 * (x_wall - params["p_current"][0, 0])]])
+            x_wall = 0.5
+            lb = np.array([[-1 * (x_wall - params["p_current"][0, 0])]])
             ub = np.array([[np.inf]])
+
         elif params["cbf_type"] == "z":
             C = -params["Jacobian"][2:3, :]
             z_wall = 0.6
-            lb = np.array([[-10 * (z_wall - params["p_current"][2, 0])]])
+            lb = np.array([[-1 * (z_wall - params["p_current"][2, 0])]])
             ub = np.array([[np.inf]])
 
         return H, g, C, lb, ub

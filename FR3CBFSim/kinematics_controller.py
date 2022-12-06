@@ -1,5 +1,6 @@
+import argparse
 import copy
-from pdb import set_trace
+import pickle
 
 import numpy as np
 import pybullet as p
@@ -18,17 +19,41 @@ from FR3CBFSim.controllers.utils import (
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-r",
+        "--recordPath",
+        help="path where the recording is saved",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "-i",
+        "--iterationNum",
+        help="number of iterations of the simulation",
+        type=int,
+        default=60000,
+    )
+    parser.add_argument(
+        "-d",
+        "--dataPath",
+        help="path where the data is saved",
+        type=str,
+        default=None,
+    )
+    args = parser.parse_args()
+
     dt = 1 / 1000
 
     # create environment
-    env = FR3Sim(render_mode="human", record_path=None)
+    env = FR3Sim(render_mode="human", record_path=args.recordPath)
     p.setTimeStep(dt)
 
     # define solver
     solver = KinematicsControllerSolver(9)
 
     # reset environment
-    info = env.reset()
+    info = env.reset(cameraDistance=1.8, cameraYaw=0.0, cameraPitch=-17)
 
     # get initial rotation and position
     R_start, _p_start = info["R_EE"], info["P_EE"]
@@ -39,57 +64,58 @@ def main():
     R_end = get_R_end_from_start(0, -90, 0, R_start)
     movement_duration = 10.0
 
-    # Compute R_error, ω_error, θ_error
+    # compute R_error, ω_error, θ_error
     R_error = R_end @ R_start.T
     ω_error, θ_error = axis_angle_from_rot_mat(R_error)
 
-    # Data storage
+    # data storage
     history = []
 
-    # Initialize time
+    # initialize time
     t = 0.0
 
+    # set initial CBF type
     cbf_type = "x"
 
-    for i in range(100000):
+    for i in range(args.iterationNum):
         t += dt
 
-        # Get data from info
+        # get data from info
         q = info["q"]
         dq = info["dq"]
         pinv_jac = info["pJ_EE"]
         jacobian = info["J_EE"]
 
-        # Get end-effector position
+        # get end-effector position
         p_current = info["P_EE"][:, np.newaxis]
 
-        # Get end-effector orientation
+        # get end-effector orientation
         R_current = info["R_EE"]
 
         path_targets = smooth_trig_path_gen(
             t, p_start, p_end, R_start, ω_error, θ_error, T=movement_duration
         )
 
-        # Error rotation matrix
+        # compute error rotation matrix
         R_err = path_targets["R_target"] @ R_current.T
 
-        # Orientation error in axis-angle form
+        # compute orientation error in axis-angle form
         rotvec_err = R.from_matrix(R_err).as_rotvec()
 
-        # Compute EE position error
+        # compute EE position error
         p_error = np.zeros((6, 1))
         p_error[:3] = path_targets["p_target"] - p_current
         p_error[3:] = rotvec_err[:, np.newaxis]
 
-        # Compute EE velocity error
+        # compute EE velocity error
         dp_target = np.vstack(
             (path_targets["v_target"], path_targets["ω_target"][:, np.newaxis])
         )
 
-        # Get gravitational vector
+        # get gravitational vector
         G = info["G"][:, np.newaxis]
 
-        # Compute joint-centering joint acceleration
+        # compute joint-centering joint acceleration
         dq_nominal = 0.5 * (env.q_nominal[:, np.newaxis] - q[:, np.newaxis])
 
         params = {
@@ -112,7 +138,7 @@ def main():
             - 0.5 * dq[:, np.newaxis]
         )
 
-        # Send joint commands to motor
+        # send joint commands to motor
         info = env.step(τ)
 
         if i == 20000:
@@ -124,14 +150,14 @@ def main():
             R_end = get_R_end_from_start(0, 1e-6, 0, R_start)
             movement_duration = 20.0
 
-            # Compute R_error, ω_error, θ_error
+            # compute R_error, ω_error, θ_error
             R_error = R_end @ R_start.T
             ω_error, θ_error = axis_angle_from_rot_mat(R_error)
 
-            # Reinitialize time
+            # reinitialize time
             t = 0.0
 
-        if i == 80000:
+        if i == 40000:
             p_start = p_current
             R_start = R_current
 
@@ -140,16 +166,25 @@ def main():
             R_end = get_R_end_from_start(0, 1e-6, 0, R_start)
             movement_duration = 20.0
 
-            # Compute R_error, ω_error, θ_error
+            # compute R_error, ω_error, θ_error
             R_error = R_end @ R_start.T
             ω_error, θ_error = axis_angle_from_rot_mat(R_error)
 
-            # Reinitialize time
+            # reinitialize time
             t = 0.0
 
+            # change cbf type
             cbf_type = "z"
 
-        print(f"x: {p_current[0, 0]}")
+        if i % 500 == 0:
+            print("Iter {:.2e} \t x: {:.2e}".format(i, p_current[0, 0]))
+
+        info["τ"] = τ
+        history.append(info)
+
+    if args.dataPath is not None:
+        with open(args.dataPath, "wb") as handle:
+            pickle.dump(history, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":
