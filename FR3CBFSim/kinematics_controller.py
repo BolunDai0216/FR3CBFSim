@@ -32,7 +32,7 @@ def main():
         "--iterationNum",
         help="number of iterations of the simulation",
         type=int,
-        default=60000,
+        default=100000,
     )
     parser.add_argument(
         "-d",
@@ -49,11 +49,15 @@ def main():
     env = FR3Sim(render_mode="human", record_path=args.recordPath)
     p.setTimeStep(dt)
 
+    # Load wall
+    wall_urdf_path = getDataPath() + "/robots/hole_in_wall.urdf"
+    p.loadURDF(wall_urdf_path, useFixedBase=True)
+
     # define solver
     solver = KinematicsControllerSolver(9)
 
     # reset environment
-    info = env.reset(cameraDistance=1.8, cameraYaw=0.0, cameraPitch=-17)
+    info = env.reset(cameraDistance=1.8, cameraYaw=-12.0, cameraPitch=-26.0)
 
     # get initial rotation and position
     R_start, _p_start = info["R_EE"], info["P_EE"]
@@ -162,7 +166,7 @@ def main():
             R_start = R_current
 
             # get target rotation and position
-            p_end = np.array([[0.7], [0], [0.5]])
+            p_end = np.array([[0.8], [0], [0.5]])
             R_end = get_R_end_from_start(0, 1e-6, 0, R_start)
             movement_duration = 20.0
 
@@ -176,11 +180,53 @@ def main():
             # change cbf type
             cbf_type = "z"
 
+        if i == 60000:
+            p_start = np.array([[0.8], [0], [0.5]])
+            R_start = R_current
+
+            # get target rotation and position
+            p_end = np.array([[0.5], [0], [0.5]])
+            R_end = get_R_end_from_start(0, 1e-6, 0, R_start)
+            movement_duration = 20.0
+
+            # compute R_error, ω_error, θ_error
+            R_error = R_end @ R_start.T
+            ω_error, θ_error = axis_angle_from_rot_mat(R_error)
+
+            # reinitialize time
+            t = 0.0
+
+            # change cbf type
+            cbf_type = "z"
+
+        if i == 80000:
+            p_start = np.array([[0.5], [0], [0.5]])
+            R_start = R_current
+
+            # get target rotation and position
+            p_end = np.array([[0.3], [0], [0.5]])
+            R_end = get_R_end_from_start(0, 90, 0, R_start)
+            movement_duration = 20.0
+
+            # compute R_error, ω_error, θ_error
+            R_error = R_end @ R_start.T
+            ω_error, θ_error = axis_angle_from_rot_mat(R_error)
+
+            # reinitialize time
+            t = 0.0
+
+            # change cbf type
+            cbf_type = "x"
+
         if i % 500 == 0:
             print("Iter {:.2e} \t x: {:.2e}".format(i, p_current[0, 0]))
 
         info["τ"] = τ
         history.append(info)
+
+        # For camera calibration
+        # camera_info = p.getDebugVisualizerCamera()
+        # print(camera_info[-2], camera_info[-4], camera_info[-3], camera_info[-1])
 
     if args.dataPath is not None:
         with open(args.dataPath, "wb") as handle:

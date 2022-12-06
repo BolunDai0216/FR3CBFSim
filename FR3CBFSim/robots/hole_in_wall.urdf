@@ -1,0 +1,101 @@
+<?xml version="1.0" ?>
+<robot name="wall">
+<link name="world"/>
+
+<link name="wall_link_1">
+    <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0.0"/>
+        <mass value="0"/>
+        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+    <visual>
+        <origin rpy="0 0 0" xyz="-0.4 0 0"/>
+        <geometry>
+            <box size="0.02 2.0 0.4"/>
+        </geometry>
+        <material name="brick">
+            <color rgba="0.58 0.23 0.19 1."/>
+        </material>
+    </visual>
+</link>
+
+<link name="wall_link_2">
+    <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0.0"/>
+        <mass value="0"/>
+        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+    <visual>
+        <origin rpy="0 0 0" xyz="-0.4 0 0"/>
+        <geometry>
+            <box size="0.02 2.0 0.3"/>
+        </geometry>
+        <material name="brick">
+            <color rgba="0.58 0.23 0.19 1."/>
+        </material>
+    </visual>
+</link>
+
+<link name="wall_link_3">
+    <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0.0"/>
+        <mass value="0"/>
+        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+    <visual>
+        <origin rpy="0 0 0" xyz="-0.4 0 0"/>
+        <geometry>
+            <box size="0.02 0.8 0.95"/>
+        </geometry>
+        <material name="brick">
+            <color rgba="0.58 0.23 0.19 1."/>
+        </material>
+    </visual>
+</link>
+
+<link name="wall_link_4">
+    <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0.0"/>
+        <mass value="0"/>
+        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+
+    <visual>
+        <origin rpy="0 0 0" xyz="-0.4 0 0"/>
+        <geometry>
+            <box size="0.02 0.8 0.95"/>
+        </geometry>
+        <material name="brick">
+            <color rgba="0.58 0.23 0.19 1."/>
+        </material>
+    </visual>
+</link>
+
+<joint name="joint1" type="fixed">
+    <origin rpy="0 0 0" xyz="0.95 0.0 0.75"/>
+    <parent link="world"/>
+    <child link="wall_link_1"/>
+</joint>
+
+<joint name="joint2" type="fixed">
+    <origin rpy="0 0 0" xyz="0.95 0.0 0.15"/>
+    <parent link="world"/>
+    <child link="wall_link_2"/>
+</joint>
+
+<joint name="joint3" type="fixed">
+    <origin rpy="0 0 0" xyz="0.95 0.6 0.475"/>
+    <parent link="world"/>
+    <child link="wall_link_3"/>
+</joint>
+
+<joint name="joint4" type="fixed">
+    <origin rpy="0 0 0" xyz="0.95 -0.6 0.475"/>
+    <parent link="world"/>
+    <child link="wall_link_4"/>
+</joint>
+
+</robot>
